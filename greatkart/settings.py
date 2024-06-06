@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'accounts',
     'store',
     'carts',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -147,7 +148,7 @@ MESSAGE_TAGS = {
 }
 
 # Email host config
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
 EMAIL_HOST_USER = '7b6de38c187301'
 EMAIL_HOST_PASSWORD = 'd5a319a8f87da6'
