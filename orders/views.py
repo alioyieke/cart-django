@@ -9,40 +9,50 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 
 # Create your views here.
-def payments(request):
+def payments(request, order_number):
     # pay pal
-    body = json.loads(request.body)
-    order = Order.objects.get(user = request.user, is_ordered = False, order_number = body['orderID'])
-    # Store transaction details inside Payment model
+    # body = json.loads(request.body)
+    order = Order.objects.get(user = request.user, is_ordered = False, order_number = order_number)
+    # Store transaction details
+    # generate payment id
+    yr = int(datetime.date.today().strftime('%Y'))
+    dt = int(datetime.date.today().strftime('%d'))
+    mt = int(datetime.date.today().strftime('%m'))
+    d = datetime.date(yr, mt, dt)
+    current_date = d.strftime("%Y%m%d")
+    payment_id = current_date + str(order.id)
+            
     payment = Payment(
         user           = request.user,
-        payment_id     = body['transID'],
-        payment_method = body['payment_method'],
+        payment_id     = payment_id,
+        payment_method = 'NULL',
         amount_paid    = order.order_total,
-        status         = body['status'],
+        status         = 'COMPLETED',
     )
     payment.save()
     order.payment = payment
     order.is_ordered = True
+    order.status     = 'COMPLETED'
     order.save()
 
     #Move the cart items to Order Product table
     cart_items = CartItem.objects.filter(user = request.user)
+    payment    = Payment.objects.get(payment_id = payment_id)
     for item in cart_items:
         order_product = OrderProduct()
-        order_product.order         = order.order_number
         order_product.payment       = payment
         order_product.user          = request.user
         order_product.product       = item.product
         order_product.quantity      = item.quantity
         order_product.product_price = item.product.price
-        order_product.ordered = True
+        order_product.ordered       = True
+        order_product.order         = order
         order_product.save()
 
         #save product variations
         cart_item = CartItem.objects.get(id = item.id)
         product_variation = cart_item.variations.all()
-        orderproduct = OrderProduct.objects.get(id = orderproduct.id)
+        orderproduct = OrderProduct.objects.get(id = order_product.id)
         orderproduct.variation.set(product_variation)
         orderproduct.save()
 
@@ -65,11 +75,13 @@ def payments(request):
     send_mail.send()
 
     #send order number and transaction id back to sendData() via JsonResponse
-    data = {
-        'order_number': order.order_number,
-        'transID': payment.payment_id,
-    }
-    return JsonResponse(data)
+    #data = {
+    #     'order_number': order.order_number,
+    #     'transID': payment.payment_id,
+    # }
+    # return JsonResponse(data)
+
+    return redirect('order_complete', order.order_number, payment_id)
 
 def place_order(request, total = 0, quantity = 0):
     current_user = request.user
@@ -128,14 +140,14 @@ def place_order(request, total = 0, quantity = 0):
     else:
         return redirect('checkout')
 
-def order_complete(request):
-    order_number = request.GET.get('order_number')
-    transID      = request.GET.get('payment-id')
+def order_complete(request, order_number, payment_id):
+    # order_number = request.GET.get('order_number')
+    # transID      = request.GET.get('payment-id')
 
     try:
         order = Order.objects.get(order_number = order_number, is_ordered = True)
         ordered_products = OrderProduct.objects.filter(order_id = order.id)
-        payment = Payment.objects.get(payment_id = transID)
+        payment = Payment.objects.get(payment_id = payment_id)
 
         subtotal = 0
         for i in ordered_products:

@@ -104,9 +104,10 @@
                         <p class="text-center mb-3">
                             <img src="{% static './images/misc/payments.png' %}" height="26">
                         </p>
-                        <div id="paypal-button-container">
-                            {% comment %} paypal button will load {% endcomment %}
-                        </div>
+                        <a href="{% url 'payments' order.order_number %}" class="btn btn-primary btn-block">Make Pyament</a>
+                        {% comment %} <div id="paypal-button-container">
+                            paypal button will load
+                        </div> {% endcomment %}
                     </div> <!-- card-body.// -->
                 </div> <!-- card.// -->
 
@@ -119,7 +120,7 @@
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->
 
-<script>
+{% comment %} <script>
     function getCookie(name){
         let cookieValue = null;
         if(document.cookie && document.cookie !== ''){
@@ -189,6 +190,6 @@
             });
         }
     }).render('#paypal-button-container');
-</script>
+</script> {% endcomment %}
 
 {% endblock %}
